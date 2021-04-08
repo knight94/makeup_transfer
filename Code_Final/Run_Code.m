@@ -16,11 +16,11 @@ img_I = imread(InputFilePath_I);
 % plot(fpts_I(:,1),fpts_I(:,2),'o','MarkerEdgeColor', 'k', 'MarkerFaceColor','green');
 % trimesh(T_I, fpts_I(:,1), fpts_I(:,2));
 img_R = imread(InputFilePath_R);
-figure
-imshow(img_R);
-hold on;
-plot(fpts_R(:,1),fpts_R(:,2),'o','MarkerEdgeColor', 'k', 'MarkerFaceColor','green');
-trimesh(T_I, fpts_R(:,1), fpts_R(:,2));
+% figure
+% imshow(img_R);
+% hold on;
+% plot(fpts_R(:,1),fpts_R(:,2),'o','MarkerEdgeColor', 'k', 'MarkerFaceColor','green');
+% trimesh(T_I, fpts_R(:,1), fpts_R(:,2));
 
 %Affine transformatiion
 % R = T*I
@@ -55,6 +55,7 @@ for i = 1:size(img_I,1)
                     [warp_R(i,j,kk)] = bilinear_inter(Q, P_nn, new_P(1), new_P(2));
                 end
                 %warp_R(i,j,:) = img_R(floor(new_P(2)),floor(new_P(1)),:);
+                break;
             end
         end
     end
@@ -82,7 +83,8 @@ std_R = round(wait(imrect(gca)));
 close(f);
 patch = imcrop(I_L, std_R);
 DOS = 2*std2(sqrt(sum(patch.^2,3)));
-I_large = imbilatfilt(I_L, DOS);
+% I_large = imbilatfilt(I_L, DOS);
+I_large = bilateral_filter(I_L);
 imshow(I_large./100);
 
 I_skin = I_L - I_large;
@@ -97,7 +99,8 @@ DOS = 2*std2(sqrt(sum(patch.^2,3)));
 if (DOS == 0)
     DOS = 0.001;
 end
-R_large = imbilatfilt(R_L, DOS);
+% R_large = imbilatfilt(R_L, DOS);
+R_large = bilateral_filter(R_L);
 imshow(R_large./100);
 R_skin = R_L - R_large;
 imshow(R_skin*40);
