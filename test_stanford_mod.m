@@ -1,6 +1,6 @@
 % The main file on transferring the makeup from the reference to the
 % target. 
-%
+
 % EE 368: Digital Face Makeup Transfer
 % Author: Wut Yee Oo
 % Stanford University
