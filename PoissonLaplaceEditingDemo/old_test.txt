@@ -1,0 +1,477 @@
+% The main file on transferring the makeup from the reference to the
+% target. 
+%
+% EE 368: Digital Face Makeup Transfer
+% Author: Wut Yee Oo
+% Stanford University
+% 12/5/2015
+%
+clc; clear; close all
+warning('off','all')
+load('map.mat');
+addpath('./PoissonLaplaceEditingDemo');
+addpath('./stasm4.1.0/vc10/x64/Debug');
+addpath('./tpsWarp');
+addpath('./WlsFilter');
+addpath('./faceRecognition');
+addpath('./test/input/reference');
+addpath('./test/input/target');     
+addpath('./test/output/textFiles');
+makeupPath = './test/output/makeUpResults/';
+outputPath = './test/output/MATLABimg/';
+%% CHOOSE REF and TARGET IMG from test\input here
+refno = '03';
+targetno = '01';
+mkdir(outputPath, ['ref',refno,'target',targetno]);
+outputPath = [outputPath,'ref',refno,'target',targetno,'/']; 
+%% CREATE FACIAL LANDMARK TEST DATABASE: RESIZE IMAGES
+% Images need to be resized to be transformed from RGB color space to
+% CIELab space
+refface = im2double(imread(['.\test\input\reference\', refno, '.jpg']));
+targetface = im2double(imread(['.\test\input\target\', targetno, '.jpg']));
+refface = imresize(refface, [400 NaN]);
+targetface = imresize(targetface, [400 NaN]);
+imwrite(refface,strcat('./stasm4.1.0/vc10/x64/Debug/ref_', refno, '.jpg'));
+imwrite(targetface,strcat('./stasm4.1.0/vc10/x64/Debug/target_', targetno,'.jpg'));
+
+%% CREATE FACIAL LANDMARK TEST DATABASE: PERFORM FACIAL LANDMARK RECOGNIION
+% Note: follow this step only to generate landmark files of your own image 
+% Test images only have text files of landmarks
+%
+% Use the resized images in ./stasm4.1.0/vc10/x64/Debug/ folder to perform 
+% facial landmark recognition of 77 data points by Active Shape Model which 
+% was implemented in Stasm library by Stephen Milborrow. 
+%
+% Wut Yee already modified the Stasm executable file to generate a log file of 77 
+% data points.
+%
+% To run the executable and get the log file of 77 datapoints, 
+% 
+% REFERENCE:
+% In command line prompt, 
+%   locate the directory to stasm4.1.0\vc10\x64\Debug. 
+%   type "minimal ref_refno.jpg" to run
+% Output:
+%   stasm.log file of 77 data points
+%   ref_refno_stasm.bmp
+% Save stasm.log file as "ref_refno.txt" in
+% test\output\textfiles
+%
+% TARGET:
+% In command line prompt, 
+%   locate the directory to stasm4.1.0\vc10\x64\Debug. 
+%   type "minimal target_targetno.jpg" to run
+% Output:
+%   stasm.log file of 77 data points
+%   target_targetno_stasm.bmp
+% Save minimal.log file as "target_targetno.txt" in
+% test\output\textfiles
+% 
+% Proceed to the rest of MATLAB code to get the final make up product
+
+%% PERFORM MASKING and CUTTING
+% Read textfile to get the face boundary (first 16 points). Save it in a
+% struct file of p for contouring, masking and cutting
+
+disp('Creating mask images');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Reference %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+refFaceCut1 = createMask(refface,['ref_',refno],'face');
+refLeftEyeCut = createMask(refface, ['ref_',refno],'leftEye');
+refRightEyeCut = createMask(refface,['ref_',refno], 'rightEye');
+refUpperLipCut = createMask(refface,['ref_',refno], 'upperLip');
+refLowerLipCut = createMask(refface,['ref_',refno], 'lowerLip');
+
+refFaceCut = refFaceCut1 - refLeftEyeCut - refRightEyeCut - refUpperLipCut - ...
+    refLowerLipCut;
+refEyeCut = refLeftEyeCut + refRightEyeCut;
+refLipCut = (refUpperLipCut + refLowerLipCut) > 0;
+
+refBackMask = zeros(size(refface));
+refFaceMask = zeros(size(refface));
+refLipMask = zeros(size(refface));
+for i = 1:3
+    refFaceMask(:,:,i) = refface(:,:,i) .* refFaceCut; 
+    refBackMask(:,:,i) = refface(:,:,i) .* (~(refFaceCut1 - refEyeCut));
+    refLipMask(:,:,i) = refface(:,:,i) .* refLipCut;
+end
+
+figure(1);clf; 
+subplot(1,2,1); imshow(refFaceMask,[]);
+subplot(1,2,2);imshow(refLipMask,[]);
+imwrite(refFaceMask,strcat(outputPath, refno, 'FaceMask.jpg'));
+imwrite(refLipMask,strcat(outputPath, refno, 'LipMask.jpg'));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Target %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+targetFaceCut1 = createMask(targetface,['target_',targetno], 'face');
+targetLeftEyeCut = createMask(targetface,['target_',targetno], 'leftEye');
+targetRightEyeCut = createMask(targetface,['target_',targetno], 'rightEye');
+targetUpperLipCut = createMask(targetface,['target_',targetno], 'upperLip');
+targetLowerLipCut = createMask(targetface,['target_',targetno], 'lowerLip');
+
+targetFaceCut = targetFaceCut1 - targetLeftEyeCut - targetRightEyeCut - ...
+    targetUpperLipCut - targetLowerLipCut;
+targetEyeCut = targetLeftEyeCut + targetRightEyeCut;
+targetLipCut = (targetUpperLipCut + targetLowerLipCut) > 0;
+
+targetLipMask = zeros(size(targetface));
+targetFaceMask = zeros(size(targetface));
+for i = 1:3
+    targetFaceMask(:,:,i) = targetface(:,:,i) .* targetFaceCut; 
+    targetLipMask(:,:,i) = targetface(:,:,i) .* targetLipCut;
+end
+
+% threshold targetFaceCut and recreate targetFaceMask to remove make up 
+% transfer in areas where target hair maybe present
+targetgray = rgb2gray(targetFaceMask);
+target_norm = targetgray./max(targetgray(:));
+thresh = graythresh(target_norm);
+targetFaceCut = targetgray > thresh;
+% re-add any other facial details other than hair that get excluded in
+% thresholding
+targetFaceCut = imfill(targetFaceCut, 'holes');
+targetFaceCut = targetFaceCut - targetLipCut-targetEyeCut;
+figure(17)
+imshow(targetFaceCut);
+
+for i = 1:3
+    targetFaceMask(:,:,i) = targetface(:,:,i) .* targetFaceCut; 
+    targetBackMask(:,:,i) = targetface(:,:,i) .* (~(targetFaceCut + targetLipCut));
+end
+
+figure(2);clf; 
+subplot(1,2,1); imshow(targetFaceMask,[]);
+subplot(1,2,2);imshow(targetLipMask,[]);
+imwrite(targetFaceMask,strcat(outputPath, 'targetFaceMask.jpg'));
+imwrite(targetLipMask,strcat(outputPath, 'targetLipMask.jpg'));
+
+%% WARP USING THIN PLATE SPLINE METHOD
+% Read textfile and save it as landmark.mat 
+disp ('Creating landmark file');
+reftxt = dlmread(['ref_',refno,'.txt'], ' ',[7 0 83 1]);
+targettxt = dlmread(['target_',targetno,'.txt'],' ',[7 0 83 1]);
+Xp = reftxt(:,2)';
+Xs = targettxt(:,2)';
+Yp = reftxt(:,1)';
+Ys = targettxt(:,1)';
+save('landmark.mat','Xp','Xs','Yp','Ys');
+
+%  W = warped without holes
+%  Wr = warped with holes
+disp ('Warping');
+load('landmark.mat');
+[refFaceW, refFaceWr] = tpsWarpDemo(refface,targetface,'map.mat','landmark.mat');
+refFaceMaskW = zeros(size(refFaceW));
+refLipMaskW = zeros(size(refFaceW)); 
+for i = 1:3
+refFaceMaskW (:,:,i)= refFaceW (:,:,i).* targetFaceCut;
+refLipMaskW (:,:,i)= refFaceW (:,:,i).* targetLipCut;
+end
+
+% adjust color by using minimum least square error of three color channels
+refFaceMaskW = coloradjust (refFaceMaskW, targetFaceMask);
+% refLipMaskW = coloradjust (refLipMaskW, targetLipMask);
+
+figure(3);clf;
+subplot(1,2,1); imshow(refFaceMask,[]);
+for ix = 1 : length(Xp),
+	text(Yp(ix), Xp(ix), num2str(ix));
+end
+subplot(1,2,2); imshow(refFaceMaskW,[]);
+for ix = 1 : length(Xs),
+	impoint(gca,Ys(ix),Xs(ix));
+end
+
+figure(17);clf;
+imshow(refface,[]);
+for ix = 1 : length(Xp),
+	text(Yp(ix), Xp(ix), ['+^{',num2str(ix),'}'],'Color','red','FontSize',12 );
+end
+
+figure(18);clf;
+imshow(targetface,[]);
+for ix = 1 : length(Xs),
+	text(Ys(ix), Xs(ix), ['+^{',num2str(ix),'}'],'Color','blue','FontSize',10  );
+end
+
+imwrite(refFaceMaskW,strcat(outputPath, 'refWarped.jpg'));
+
+%% SEPARATE INTO LIGHTNESS AND COLOR
+disp ('Separate into lightness and color');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Reference %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+refCIELab = rgb2lab (refFaceMaskW);
+rLipCIELab = rgb2lab (refLipMaskW);
+refLight = refCIELab(:,:,1);
+rLipLight = rLipCIELab(:,:,1);
+IRef = refLight;
+refcolora = refCIELab(:,:,2);
+refcolorb = refCIELab(:,:,3);
+rLipcolora = rLipCIELab(:,:,2);
+rLipcolorb = rLipCIELab(:,:,3);
+figure (4);clf;
+subplot(1,3,1); imshow (IRef,[]);title('Warped reference: Lightness Layer');
+subplot(1,3,2); imshow (refcolora,[]);title('Warped reference: Color Layer a');
+subplot(1,3,3); imshow (refcolorb,[]);title('Warped reference: Color Layer b');
+imwrite(uint8(4.*IRef),strcat(outputPath, 'refFaceLight.jpg'));
+imwrite(uint8(4.*refcolora),strcat(outputPath, 'refFaceColora.jpg'));
+imwrite(uint8(4.*refcolora),strcat(outputPath, 'refFaceColorb.jpg'));
+imwrite(uint8(4.*rLipLight),strcat(outputPath, 'refLipLight.jpg'));
+imwrite(uint8(4.*rLipcolora),strcat(outputPath, 'refLipColora.jpg'));
+imwrite(uint8(4.*rLipcolorb),strcat(outputPath,  'refLipColorb.jpg'));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Target %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+targetCIELab = rgb2lab (targetFaceMask);
+tLipCIELab = rgb2lab (targetLipMask);
+targetLight = targetCIELab(:,:,1);
+tLipLight = tLipCIELab(:,:,1);
+ITarget = targetLight;
+targetcolora = targetCIELab(:,:,2);
+targetcolorb = targetCIELab(:,:,3);
+tLipcolora = tLipCIELab(:,:,2);
+tLipcolorb = tLipCIELab(:,:,3);
+figure (5);clf;
+subplot(1,3,1); imshow (ITarget,[]);title('Target: Lightness Layer');
+subplot(1,3,2); imshow (targetcolora,[]);title('Target: Color Layer a');
+subplot(1,3,3); imshow (targetcolorb,[]);title('Target: Color Layer b');
+imwrite(uint8(4.*ITarget),strcat(outputPath, 'targetFaceLight.jpg'));
+imwrite(uint8(4.*targetcolora),strcat(outputPath, 'targetFaceColora.jpg'));
+imwrite(uint8(4.*targetcolora),strcat(outputPath, 'targetFaceColorb.jpg'));
+imwrite(uint8(4.*tLipLight),strcat(outputPath, 'targetLipLight.jpg'));
+imwrite(uint8(4.*tLipcolora),strcat(outputPath, 'targetLipColora.jpg'));
+imwrite(uint8(4.*tLipcolorb),strcat(outputPath,  'targetLipColorb.jpg'));
+%% SEPARATE LIGHTNESS INTO LARGE SCALE AND DETAIL LAYERS
+tic
+disp ('Reference, Separate lightness into large scale and detail layers');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Reference %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% lambda = 4; lambda_s = 1; lambda_l = 4; alpha = 1.2; dimTile = [5 5]; thres = 0.02;
+
+% Bilateral filtering 
+% lRef = sameLevelWlsFilter(IRef, lambda, alpha); 
+w = 5; % bilateral window size
+sigma = [3 0.1]; % (sigma_s, sigma_r) 
+
+lRef = bilateral_filter(IRef, w, sigma);
+lRef = lRef .* targetFaceCut;
+figure (6);clf;
+subplot(2,2,1); imshow(lRef,[]); 
+% title(['Large scale layer reference, same Level of smoothing with \lambda = ', num2str(lambda), ' \alpha = ',...
+%     num2str(alpha)]);
+% imwrite(uint8(4.*lRef),strcat(outputPath,'refFaceLargeLayer.jpg'));
+title('Face large scale layer reference');
+imwrite(uint8(4.*lRef),strcat(outputPath,'refFaceLargeLayer_bilateral.jpg'));
+
+sRef = IRef-lRef;
+subplot(2,2,2); imshow(sRef,[]); 
+% title(['Detail layer reference, same Level of smoothing with \lambda = ', num2str(lambda), ' \alpha = ',...
+%     num2str(alpha)]);
+% imwrite(uint8(4.*sRef),strcat(outputPath,'refFaceDetailLayer.jpg'));
+title('Face Detail layer reference');
+imwrite(uint8(4.*sRef),strcat(outputPath,'refFaceDetailLayer_bilateral.jpg'));
+
+% rLipCIELab_smooth = bilateral_filter(refLipMaskW, w, sigma);
+% l2RLip = rLipCIELab_smooth(:,:,1); 
+% l2RLip = l2RLip .* targetLipCut;
+% subplot(2,2,3); imshow(l2RLip,[]); 
+% title('Lip large scale layer reference');
+% imwrite(uint8(4.*l2RLip),strcat(outputPath,'refLipLargeLayer_bilateral.jpg'));
+
+% s2RLip = rLipLight - l2RLip; 
+% subplot(2,2,4); imshow(s2RLip,[]);
+% title('Lip Detail layer reference');
+% imwrite(uint8(4.*s2RLip),strcat(outputPath,'refLipDetailLayer_bilateral.jpg'));
+
+sgtitle(['Bilateral filtering with w = ', num2str(w), '\sigma = ', num2str(sigma)]) 
+
+% [l2Ref, lambdaDiff_RefFace] = diffLevelWlsFilter(IRef, lambda_s, lambda_l, alpha, dimTile, thres);
+% [l2RLip, lambdaDiff_RefLip] = diffLevelWlsFilter(rLipLight, lambda_s, lambda_l, alpha, dimTile, thres);
+% l2Ref = l2Ref .* targetFaceCut;
+% l2RLip = l2RLip .* targetLipCut;
+% figure (7);clf;
+% subplot(1,2,1); imshow(l2Ref, []); 
+% title(['Large scale layer reference, different Levels of smoothing with \lambda_s= ', num2str(lambda_s),...
+%     ', \lambda_l= ', num2str(lambda_l), ', \alpha = ', num2str(alpha),...
+%     ', dimTiles = [', num2str(dimTile(1)), ' ', num2str(dimTile(2)), ...
+%     '], threshold = ', num2str(thres)]);
+% imwrite(uint8(4.*l2Ref),strcat(outputPath,'refFaceLargeLayer_lambdaDiff.jpg'));
+% imwrite(uint8(4.*l2RLip),strcat(outputPath,'refLipLargeLayer_lambdaDiff.jpg'));
+% 
+% s2Ref = IRef - l2Ref;
+% s2RLip = rLipLight - l2RLip;
+% subplot(1,2,2); imshow(s2Ref, []);
+% title(['Detail layer reference, different Levels of smoothing with \lambda_s= ', num2str(lambda_s),...
+%     ', \lambda_l= ', num2str(lambda_l), ', \alpha = ', num2str(alpha),...
+%     ', dimTiles = [', num2str(dimTile(1)), ' ', num2str(dimTile(2)), ...
+%     '], threshold = ', num2str(thres)]);
+% figure (8);clf;
+% imwrite(uint8(4.*s2Ref),strcat(outputPath,'refFaceDetailLayer_lambdaDiff.jpg'));
+% imwrite(uint8(4.*s2RLip),strcat(outputPath,'refLipDetailLayer_lambdaDiff.jpg'));
+% imshow(lambdaDiff_RefFace, []);
+% title('Value of \lambda for different levels of smoothing');
+% imwrite(lambdaDiff_RefFace,strcat(outputPath,'refFace_lambdaDiffVal.jpg'));
+% imwrite(lambdaDiff_RefLip,strcat(outputPath,'refLip_lambdaDiffVal.jpg'));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Target %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+disp ('Target, Separate lightness into large scale and detail layers');
+
+lTarget  = bilateral_filter(ITarget, w, sigma); 
+lTarget = lTarget .* targetFaceCut;
+figure (9);clf;
+subplot(2,2,1); imshow(lTarget,[]); 
+title('Face Large scale layer target');
+imwrite(uint8(4.*lTarget),strcat(outputPath,'targetFaceLargeLayer_bilateral.jpg'));
+
+sTarget = ITarget-lTarget; 
+subplot(2,2,2); imshow(sTarget,[]); 
+title('Face Detail layer target');
+imwrite(uint8(4.*sTarget),strcat(outputPath,'targetFaceDetailLayer_bilateral.jpg'));
+
+% tLipCIELab_smooth = bilateral_filter(targetLipMask, w, sigma);
+% l2TLip = tLipCIELab_smooth(:,:,1);
+% l2TLip = l2TLip .* targetLipCut;
+% subplot(2,2,3); imshow(l2TLip,[]); 
+% title('Lip Large scale layer target');
+% imwrite(uint8(4.*l2TLip),strcat(outputPath,'targetLipLargeLayer_bilateral.jpg'));
+% 
+% s2TLip = tLipLight - l2TLip;
+% subplot(2,2,4); imshow(s2TLip,[]); 
+% title('Lip Large scale layer target');
+% imwrite(uint8(4.*s2TLip),strcat(outputPath,'targetLipDetailLayer_bilateral.jpg'));
+
+sgtitle(['Bilateral filtering with w = ', num2str(w), '\sigma = ', num2str(sigma)]) 
+
+% lTarget = sameLevelWlsFilter(ITarget, lambda, alpha);
+% lTarget = lTarget .* targetFaceCut;
+% figure (9);clf;
+% subplot(1,2,1); imshow(lTarget,[]); 
+% title(['Large scale layer target, same Level of smoothing with \lambda = ', num2str(lambda), ' \alpha = ',...
+%     num2str(alpha)]);
+% imwrite(uint8(4.*lTarget),strcat(outputPath,'targetFaceLargeLayer.jpg'));
+% sTarget = ITarget-lTarget;
+% subplot(1,2,2); imshow(sTarget,[]); 
+% title(['Detail layer target, same Level of smoothing with \lambda = ', num2str(lambda), ' \alpha = ',...
+%     num2str(alpha)]);
+% imwrite(uint8(4.*sTarget),strcat(outputPath,'targetFaceDetailLayer.jpg'));
+% 
+% [l2Target, lambdaDiff_TargetFace] = diffLevelWlsFilter(ITarget, lambda_s, lambda_l, alpha, dimTile, thres);
+% [l2TLip, lambdaDiff_TargetLip] = diffLevelWlsFilter(tLipLight, lambda_s, lambda_l, alpha, dimTile, thres);
+% l2Target = l2Target .* targetFaceCut;
+% l2TLip = l2TLip .* targetLipCut;
+% figure (10);clf;
+% subplot(1,2,1); imshow(l2Target, []); 
+% title(['Large scale layer target, different Levels of smoothing with \lambda_s= ', num2str(lambda_s),...
+%     ', \lambda_l= ', num2str(lambda_l), ', \alpha = ', num2str(alpha),...
+%     ', dimTiles = [', num2str(dimTile(1)), ' ', num2str(dimTile(2)), ...
+%     '], threshold = ', num2str(thres)]);
+% imwrite(uint8(4.*l2Target),strcat(outputPath,'targetFaceLargeLayer_lambdaDiff.jpg'));
+% imwrite(uint8(4.*l2TLip),strcat(outputPath,'targetLipLargeLayer_lambdaDiff.jpg'));
+% 
+% s2Target = ITarget - l2Target;
+% s2TLip = tLipLight - l2TLip;
+% subplot(1,2,2); imshow(s2Target, []);
+% title(['Detail layer target, different Levels of smoothing with \lambda_s= ', num2str(lambda_s),...
+%     ', \lambda_l= ', num2str(lambda_l), ', \alpha = ', num2str(alpha),...
+%     ', dimTiles = [', num2str(dimTile(1)), ' ', num2str(dimTile(2)), ...
+%     '], threshold = ', num2str(thres)]);
+% imwrite(uint8(4.*s2Target),strcat(outputPath,'targetFaceDetailLayer_lambdaDiff.jpg'));
+% imwrite(uint8(4.*s2TLip),strcat(outputPath,'targetFaceDetailLayer_lambdaDiff.jpg'));
+% 
+% figure (11);
+% imshow(lambdaDiff_TargetFace, []);
+% title('Value of \lambda for different levels of smoothing');
+% imwrite(uint8(4.*lambdaDiff_TargetFace), strcat(outputPath,'targetFace_lambdaDiffVal.jpg'));
+% imwrite(uint8(4.*lambdaDiff_TargetLip), strcat(outputPath,'targetLip_lambdaDiffVal.jpg'));
+
+toc
+%% LIGHTNESS LAYER, DETAIL TRANSFER
+disp ('Lightness Layer, detail transfer');
+% coeffTarget = 1; coeffRef = 0.5;
+coeffTarget = 0; coeffRef = 1; % as per paper
+% L_Detail = coeffTarget * (sTarget + s2TLip) + coeffRef * (sRef + s2RLip);
+L_Detail = coeffTarget * sTarget + coeffRef * sRef; % not required lip part
+figure (12); 
+imshow(L_Detail, []);
+title('Lightness layer, face detail transfer');
+imwrite(uint8(4.*L_Detail),strcat(outputPath,'faceDetailTransfer.jpg'));
+%% LIGHTNESS LAYER, LARGE SCALE TRANSFER
+% Highlight transfer
+tic
+disp ('Lightness Layer, face highlight transfer');
+FaceL_HighLight = PoissonGrayBlend (targetFaceCut, lRef, lTarget);
+FaceL_HighLight = FaceL_HighLight .* targetFaceCut;
+figure (13);
+imshow(FaceL_HighLight,[]), 
+axis image, title('Lightness Layer, highlight transfer');
+imwrite(uint8(4.*FaceL_HighLight),strcat(outputPath,'faceHighLightTransfer.jpg'));
+
+% lip makeup transfer
+% disp ('Lightness Layer, lip highlight transfer');
+% LipL_HighLight = l2TLip; 
+% imwrite(uint8(4.*l2TLip),strcat(outputPath,'lipHighlightTransfer.jpg'));
+% toc
+%% COLOR LAYER, COLOR TRANSFER
+% channel a and b
+disp ('Color Layer, face color transfer');
+alphaBlenda = 0.8;
+FaceColora = (1 - alphaBlenda) * targetcolora + alphaBlenda * refcolora;
+FaceColora = FaceColora .* targetFaceCut;
+figure (14);
+subplot(1,2,1); imshow(FaceColora,[]);
+title('Face Color channel a transfer');
+alphaBlendb = 0.8;
+FaceColorb = (1 - alphaBlendb) * targetcolorb + alphaBlendb * refcolorb;
+FaceColorb = FaceColorb .* targetFaceCut;
+subplot(1,2,2); imshow(FaceColorb,[]);
+title('Face Color channel b transfer');
+imwrite(uint8(4.*FaceColora),strcat(outputPath,'faceColoraTransfer.jpg'));
+imwrite(uint8(4.*FaceColorb),strcat(outputPath,'faceColorbTransfer.jpg'));
+
+% disp('Color layer, lip color transfer');
+% LipColora = (PoissonGrayBlend (targetLipCut, rLipcolora, tLipcolora));
+% LipColorb = (PoissonGrayBlend (targetLipCut, rLipcolorb, tLipcolorb));
+% LipColora = LipColora .* targetLipCut;
+% LipColorb = LipColorb .* targetLipCut;
+% figure (15);
+% subplot(1,2,1); imshow(LipColora,[]);
+% title('Lip Color channel a transfer');
+% subplot(1,2,2); imshow(LipColorb,[]);
+% title('Lip Color channel b transfer');
+% imwrite(uint8(4.*LipColora),strcat(outputPath,'lipColoraTransfer.jpg'));
+% imwrite(uint8(4.*LipColorb),strcat(outputPath,'lipColorbTransfer.jpg'));
+%% MERGE ALL LAYERS
+disp ('Merge all layers');
+
+imFinal = zeros(size(targetCIELab));
+
+% imFinal(:,:,1) = FaceL_HighLight + LipL_HighLight + L_Detail;
+% imFinal(:,:,2) = FaceColora + LipColora;
+% imFinal(:,:,3) = FaceColorb + LipColorb;
+
+% lip transfer makeup 
+resultant = lip_makeup(refLipMaskW,targetLipMask); 
+tLipl = resultant(:,:,1);
+tLipa = resultant(:,:,2); 
+tLipb = resultant(:,:,3); 
+LipL_HighLight = PoissonGrayBlend (targetLipCut, rLipLight, tLipl);
+imFinal(:,:,1) = FaceL_HighLight + LipL_HighLight + L_Detail;
+imFinal(:,:,2) = FaceColora + tLipa;
+imFinal(:,:,3) = FaceColorb + tLipb;
+imFinal = lab2rgb(imFinal);
+
+% extra part than in paper
+% Cicular averaging filter to blend edges
+% g = fspecial('disk', 15);
+% filt = imfilter(targetFaceCut + targetLipCut + targetEyeCut, g,'replicate');
+% imFinal_all = imFinal + targetBackMask; 
+% imFinal_filtall = zeros(size(imFinal_all));
+% for i=1:3
+% imFinal_filtall(:,:,i) = filt.* imFinal_all(:,:,i)+(1-filt).*targetface(:,:,i);
+% end
+
+figure (16); 
+imshow(imFinal);
+imwrite(imFinal, strcat(outputPath, 'Final_makeup.jpg'));
+% subplot(1,3,1),imshow(imFinal_all);
+% subplot(1,3,2),imshow(imFinal_filtall);
+% imwrite(imFinal_all,strcat(makeupPath,['ref',refno,'target',targetno,'noBlend.jpg']));
+% imwrite(imFinal_filtall,strcat(makeupPath,['ref',refno,'target',targetno,'Blend.jpg']));
+
+
