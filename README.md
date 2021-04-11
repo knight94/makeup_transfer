@@ -20,7 +20,7 @@ Start with Run_Code.m
 > Beta array generation
 * `beta_arr = beta_gen(iml,masks)`
    * iml &#8594; Target L channel. 
-   * `<masks = {targetFaceCut, targetEyeCut, targetLipCut}>`;  
+   * `masks = {targetFaceCut, targetEyeCut, targetLipCut}`;  
 
 > Face Highlight Transfer 
 * `FaceL_HighLight = highlight_transfer(targetFaceCut, l2Ref, l2Target, beta_arr)`
