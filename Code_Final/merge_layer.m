@@ -10,7 +10,7 @@ function imFinal_all = merge_layer(targetCIELab, FaceL_HighLight, L_Detail, Face
 
     imFinal = lab2rgb(imFinal);
     imFinal_all = imFinal + targetBackMask; 
-    figure(16);
+    figure;clf;
     imshow(imFinal_all);
     title('Subject Make Up');
     imwrite(imFinal_all,'Subject_Make_up.jpg'); 
