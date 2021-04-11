@@ -15,3 +15,5 @@ Start with Run_Code.m
   * addpath('./PoissonLaplaceEditingDemo'); 
   * start from "SEPARATE LIGHTNESS INTO LARGE SCALE AND DETAIL LAYERS" section of "test_stanford_mod.m".
   * give suitable value to "outputPath".
+
+> We're living the future so
