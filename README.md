@@ -46,5 +46,14 @@ Start with Run_Code.m
 > Merge Layers
 * `function imFinal_all = merge_layer(targetCIELab, FaceL_HighLight, L_Detail, FaceColora, FaceColorb, lip_makeup, targetBackMask) `
   * targetCIELab &#8594; LAB image of target.
-  * FaceL_HighLight 
+  * FaceL_HighLight &#8594; face highlighted image of target. (output of face highlight transfer)
+  * L_Detail &#8594; Detail layer of target face. 
+  * FaceColora, FaceColorb &#8594; Output of Color transfer function. 
+  * lip_makeup &#8594; Output of Lip Makeup Function.
+  * targetBackMask &#8594; `targetBackMask(:,:,i) = targetface(:,:,i) .* (~(targetFaceCut + targetLipCut));`
+      * targetBackMask is the RGB of target except the face and lip portion of the target. 
+      * here 'targetface' is the RGB of the Target.
+
+
+>> Every image is read in the range between 0 and 1. 
  
