@@ -46,5 +46,5 @@ Start with Run_Code.m
 > Merge Layers
 * `function imFinal_all = merge_layer(targetCIELab, FaceL_HighLight, L_Detail, FaceColora, FaceColorb, lip_makeup, targetBackMask) `
   * targetCIELab &#8594; LAB image of target.
-  * 
+  * FaceL_HighLight 
  
