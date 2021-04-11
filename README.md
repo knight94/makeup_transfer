@@ -44,4 +44,7 @@ Start with Run_Code.m
     * targetlipmask &#8594; RGB image of the target image.
 
 > Merge Layers
-* ``
+* `function imFinal_all = merge_layer(targetCIELab, FaceL_HighLight, L_Detail, FaceColora, FaceColorb, lip_makeup, targetBackMask) `
+  * targetCIELab &#8594; LAB image of target.
+  * 
+ 
