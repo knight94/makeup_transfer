@@ -11,11 +11,10 @@ grad_mag_e = sqrt((e_gx).^2 + (e_gy).^2);
 for i = 1:x
     for j = 1:y 
         if mask(i,j) > 0
-            subject(i,j) = example(i,j);
-        end 
-        if abs(grad_mag_e(i,j))*beta(i,j) > abs(grad_mag_s(i,j))
-            s_gx(i,j) = e_gx(i,j); 
-            s_gy(i,j) = e_gy(i,j);
+            if abs(grad_mag_e(i,j))*beta(i,j) > abs(grad_mag_s(i,j))
+                s_gx(i,j) = e_gx(i,j); 
+                s_gy(i,j) = e_gy(i,j);
+            end
         end 
     end 
 end 
