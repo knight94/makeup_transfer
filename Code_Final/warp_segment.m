@@ -183,9 +183,9 @@ imshow(I_large./100);
 subplot(1,4,2)
 imshow(I_skin./255*40);
 subplot(1,4,3)
-imshow(I_a./100);
+imshow(mat2gray(I_a));
 subplot(1,4,4)
-imshow(I_b./100);
+imshow(mat2gray(I_b));
 
 figure
 title('Reference image')
@@ -194,8 +194,8 @@ imshow(R_large./100);
 subplot(1,4,2)
 imshow(R_skin./255*40);
 subplot(1,4,3)
-imshow(R_a./100);
+imshow(mat2gray(R_a));
 subplot(1,4,4)
-imshow(R_b./100);
+imshow(mat2gray(R_b));
 end
 
