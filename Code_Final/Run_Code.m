@@ -69,7 +69,7 @@ L_Detail = R_skin + 0.5*I_skin;
 [FaceColora, FaceColorb] = color_transfer(alphaBlenda, C.reg1, I_a, I_b, R_a, R_a);
 
 %Lip transfer
-lip_result = lip_makeup(C.reg2 - bw3, warp_R, img_I);
+lip_result = lip_makeup(C.reg2, warp_R, img_I);
 
 %merge all the images
 FaceL_HighLight_temp = FaceL_HighLight;
