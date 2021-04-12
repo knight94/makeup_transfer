@@ -5,7 +5,7 @@ function [FaceColora, FaceColorb] = color_transfer(alphaBlenda, targetFaceCut, t
     figure;clf;
     subplot(1,2,1); imshow(FaceColora);
     title('Face Color channel a transfer');
-    FaceColorb = (1 - alphaBlendb) * targetcolorb + alphaBlendb * refcolorb;
+    FaceColorb = (1 - alphaBlenda) * targetcolorb + alphaBlenda * refcolorb;
     FaceColorb = FaceColorb .* targetFaceCut;
     subplot(1,2,2); imshow(FaceColorb);
     title('Face Color channel b transfer');
