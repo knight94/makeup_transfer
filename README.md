@@ -24,8 +24,8 @@ Start with Run_Code.m
 
 > Face Highlight Transfer 
 * `FaceL_HighLight = highlight_transfer(targetFaceCut, l2Ref, l2Target, beta_arr)`
-  * l2Ref &#8594; L channel of the warped Reference image. 
-  * l2Target &#8594; L channel of the target image. 
+  * l2Ref &#8594; Largescale layer of the warped Reference image. 
+  * l2Target &#8594; Largescale layer of the target image. 
   * beta_arr &#8594; Output of beta array generation. 
 
 > Color Transfer
