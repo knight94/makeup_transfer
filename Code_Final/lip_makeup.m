@@ -40,7 +40,7 @@ for i = 1:tx
                 end
             end
         end
-        resultant(i,j,1) = refl(max_i, max_j);
+%         resultant(i,j,1) = refl(max_i, max_j);
         resultant(i,j,2) = refa(max_i, max_j);
         resultant(i,j,3) = refb(max_i, max_j);
     end
