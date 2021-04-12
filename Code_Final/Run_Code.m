@@ -1,8 +1,8 @@
 clear all; clc;
 %%Input Parameters
 InputFilePath_I = 'Images/target/08.jpg';
-InputFilePath_R = 'Images/11.jpg';
-addpath(genpath('C:\Users\nsahu\Documents\Semester-I\COL783\Assignment_2\code'))
+InputFilePath_R = 'Images/05.jpg';
+%addpath(genpath('C:\Users\nsahu\Documents\Semester-I\COL783\Assignment_2\code'))
 alphaBlenda = 0.8;
 num_pts = 73;
 
@@ -10,8 +10,12 @@ num_pts = 73;
 img_I = imread(InputFilePath_I);
 img_R = imread(InputFilePath_R);
 
-img_I = imresize(img_I, [400 NaN]);
-img_R = imresize(img_R, [400 NaN]);
+if (size(img_I,1) > 400)
+    img_I = imresize(img_I, [400 NaN]);
+end
+if (size(img_R,1) > 400)
+   img_R = imresize(img_R, [400 NaN]);
+end
 I_resize = 'target_resize.jpg';
 R_resize = 'ref_resize.jpg';
 imwrite(img_I, I_resize);
@@ -56,10 +60,8 @@ R_b = R_c.b;
 %beta_arr
 beta_arr = beta_gen(I_large,{C.reg1, C.reg3, C.reg2});
 
-%highlight Transfer
+% highlight Transfer
 % FaceL_HighLight = highlight_transfer(C.reg1, R_large, I_large, beta_arr);
-
-
 FaceL_HighLight = PoissonGrayBlend (C.reg1, R_large.*C.reg1, I_large.*C.reg1);
 
 %Detail/skin Transfer
@@ -90,5 +92,23 @@ imshow(imFinal,[]);
 imFinal_all = imFinal + uint8(targetBackMask) + lip_rgb; 
 figure;clf;
 imshow(imFinal_all, []);
-title('Subject Make Up');
-imwrite(imFinal_all,'Subject_Make_up_08_05.jpg'); 
+% title('Subject Make Up');
+% imwrite(imFinal_all,'Subject_Make_up_08_05.jpg'); 
+
+
+
+%%xDoG stylization
+imFinal_x = zeros(size(img_I));
+imFinal_x(:,:,1) = (FaceL_HighLight + L_Detail).*C.reg1;
+imshow(imFinal_x(:,:,1),[]);
+[imFinal_xdog] = calc_xdog(mat2gray(I_c.large+L_Detail));
+targetBackMask_x = double(imFinal_xdog) .* (~(C.reg1 + C.reg2));
+imFinal_x(:,:,1) = 100.*imFinal_xdog.*C.reg1 + 100.*targetBackMask_x;
+imFinal_x(:,:,2) = FaceColora.*C.reg1;
+imFinal_x(:,:,3) = FaceColorb.*C.reg1;
+
+imFinal_x = lab2rgb(imFinal_x, 'OutputType', 'uint8');
+imshow(imFinal_x,[]);
+imFinal_all_x = imFinal_x + lip_rgb; 
+figure;clf;
+imshow(imFinal_all_x, []);

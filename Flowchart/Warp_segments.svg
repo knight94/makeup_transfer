@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="60cm" height="11cm" viewBox="-7 42 1187 217" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="0.553571" y="43.5" width="255" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="0.553571" y="43.5" width="255" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="128.054" y="88.575">
+    <tspan x="128.054" y="88.575">Get the facial Landmarks</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="309.071" y="43.5" width="255" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="309.071" y="43.5" width="255" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="436.571" y="80.575">
+    <tspan x="436.571" y="80.575">Calculate the triangle</tspan>
+    <tspan x="436.571" y="96.575">using Delaunay method</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="616.136" y="43.5" width="255" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="616.136" y="43.5" width="255" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="743.636" y="80.575">
+    <tspan x="743.636" y="80.575">Calculate Affine transformation</tspan>
+    <tspan x="743.636" y="96.575">for each triangle mapping</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="924.3" y="43.5" width="255" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="924.3" y="43.5" width="255" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1051.8" y="72.575">
+    <tspan x="1051.8" y="72.575">For each pixel coordinate in Target image</tspan>
+    <tspan x="1051.8" y="88.575">find triangle using barycentric coordinates</tspan>
+    <tspan x="1051.8" y="104.575">transformed pixel in Reference image</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="924.3" y="178" width="255" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="924.3" y="178" width="255" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1051.8" y="207.075">
+    <tspan x="1051.8" y="207.075">Transformed pixel coordinates</tspan>
+    <tspan x="1051.8" y="223.075">to Reference image</tspan>
+    <tspan x="1051.8" y="239.075">Find pixel value using bilinear interpolation</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="-5.44643" y="178" width="269.446" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="-5.44643" y="178" width="269.446" height="80"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="129.277" y="215.075">
+    <tspan x="129.277" y="215.075">Get the facial regions</tspan>
+    <tspan x="129.277" y="231.075">C1 (face cut), C2(Lips) and C3(eyes+mouth)</tspan>
+  </text>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="255.554" y1="83.5" x2="299.335" y2="83.5"/>
+    <polygon style="fill: #000000" points="306.835,83.5 296.835,88.5 299.335,83.5 296.835,78.5 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="306.835,83.5 296.835,88.5 299.335,83.5 296.835,78.5 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="565.074" y1="83.5" x2="606.4" y2="83.5"/>
+    <polygon style="fill: #000000" points="613.9,83.5 603.9,88.5 606.4,83.5 603.9,78.5 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="613.9,83.5 603.9,88.5 606.4,83.5 603.9,78.5 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="871.136" y1="83.5" x2="914.564" y2="83.5"/>
+    <polygon style="fill: #000000" points="922.064,83.5 912.064,88.5 914.564,83.5 912.064,78.5 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="922.064,83.5 912.064,88.5 914.564,83.5 912.064,78.5 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1051.8" y1="123.5" x2="1051.8" y2="168.264"/>
+    <polygon style="fill: #000000" points="1051.8,175.764 1046.8,165.764 1051.8,168.264 1056.8,165.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1051.8,175.764 1046.8,165.764 1051.8,168.264 1056.8,165.764 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="128.054" y1="123.5" x2="129.058" y2="168.266"/>
+    <polygon style="fill: #000000" points="129.227,175.764 124.003,165.879 129.058,168.266 134.001,165.655 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="129.227,175.764 124.003,165.879 129.058,168.266 134.001,165.655 "/>
+  </g>
+</svg>
