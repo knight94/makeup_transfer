@@ -7,7 +7,7 @@
 % [2] Zhanpeng Zhang, Ping Luo, Chen Change Loy, Xiaoou Tang. Learning Deep Representation for Face Alignment  
 %     with Auxiliary Attributes. Technical report, arXiv:1408.3967v2, 2014.
 % =========================================================================
-function [fpts] = GetLandMarks(InputFilePath)
+function [fpts] = GetLandMarks(InputFilePath, num_pts)
 addpath('../TCDCN-face-alignment-master/TCDCN/');
 addpath(genpath('../toolbox-master'))
 
@@ -47,14 +47,17 @@ for i = 1:1
     hold on;
     plot(fpts(:,1),fpts(:,2),'o','MarkerEdgeColor', 'k', 'MarkerFaceColor','green');
     %Adding extra landmarks for upper face
+    new_pts = zeros(num_pts,2);
     k = 5;
-    for p = 1:k
+    for p = 1:num_pts
         [x,y] = getpts(f);
-        fpts(end+1,:) = [x,y];
+        new_pts(p,:) = [x,y];
     end
+    fpts = new_pts;
 %     T = delaunay(fpts(:,1), fpts(:,2));
 %     trimesh(T, fpts(:,1), fpts(:,2));
     hold off;
+    close(f);
 end
 end
 
