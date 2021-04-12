@@ -38,6 +38,8 @@ bw3 = poly2mask([flipud(fpts_I(1:17,1)); fpts_I(69:73,1)], [flipud(fpts_I(1:17,2
 %bw4 = poly2mask(fpts_I(28:36,1), fpts_I(28:36,2), size(img_I,1), size(img_I,2));
 C1_I = bw3 - (C3_I + C2_I);
 
+C_T = bw3;
+
 C = struct();
 C.reg1 = C1_I;
 C.reg2 = C2_I;
@@ -74,18 +76,20 @@ warp_R = zeros(size(img_I));
 for i = 1:size(img_I,1)
     for j = 1:size(img_I,2)
         P = [j, i];
-        for k = 1:size(T_I,1)
-            Tr = [fpts_I(T_I(k,1), :); fpts_I(T_I(k,2), :); fpts_I(T_I(k,3), :)];
-            if (cart2bary_loc(Tr,P) == 1)
-            %Transform and interpolate
-                new_P = [A_T_table(k, 1:3); A_T_table(k, 4:6); A_T_table(k, 7:9)] * [P';1];
-                P_nn = [floor(new_P(1)), ceil(new_P(1)), floor(new_P(2)), ceil(new_P(2))];
-                for kk = 1:3
-                    Q = [img_R(P_nn(3), P_nn(1), kk), img_R(P_nn(4), P_nn(1), kk), img_R(P_nn(4), P_nn(2), kk), img_R(P_nn(3), P_nn(2), kk)];
-                    [warp_R(i,j,kk)] = bilinear_inter(Q, P_nn, new_P(1), new_P(2));
+        if (C_T(i,j) == 1)
+            for k = 1:size(T_I,1)
+                Tr = [fpts_I(T_I(k,1), :); fpts_I(T_I(k,2), :); fpts_I(T_I(k,3), :)];
+                if (cart2bary_loc(Tr,P) == 1)
+                %Transform and interpolate
+                    new_P = [A_T_table(k, 1:3); A_T_table(k, 4:6); A_T_table(k, 7:9)] * [P';1];
+                    P_nn = [floor(new_P(1)), ceil(new_P(1)), floor(new_P(2)), ceil(new_P(2))];
+                    for kk = 1:3
+                        Q = [img_R(P_nn(3), P_nn(1), kk), img_R(P_nn(4), P_nn(1), kk), img_R(P_nn(4), P_nn(2), kk), img_R(P_nn(3), P_nn(2), kk)];
+                        [warp_R(i,j,kk)] = bilinear_inter(Q, P_nn, new_P(1), new_P(2));
+                    end
+                    %warp_R(i,j,:) = img_R(floor(new_P(2)),floor(new_P(1)),:);
+                    break;
                 end
-                %warp_R(i,j,:) = img_R(floor(new_P(2)),floor(new_P(1)),:);
-                break;
             end
         end
     end
